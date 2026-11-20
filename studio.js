@@ -1,3 +1,4 @@
+import {encodePng} from './canvas-png.js';
 import {fillLocally,stopLocalEngine,clearLocalModel} from './client.js';
 import {localFrame} from './core.js';
 import {resizeFromCorner,resizeAboutCenter,sourceTransformFromRect} from './canvas-transform.js';
@@ -29,7 +30,7 @@ async function init(){
  const db=await openDB().catch(()=>null);
  function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('kv-studio-github-assets-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('assets');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
  function dbGet(k){return new Promise(resolve=>{if(!db)return resolve(null);const r=db.transaction('assets').objectStore('assets').get(k);r.onsuccess=()=>resolve(r.result);r.onerror=()=>resolve(null);});}
- function dbPut(k,v){return new Promise((resolve,reject)=>{if(!db)return reject(Error('浏览器未提供图片保存空间'));const tx=db.transaction('assets','readwrite');if(v)tx.objectStore('assets').put(v,k);else tx.objectStore('assets').delete(k);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+ function dbPut(k,v){return new Promise((resolve,reject)=>{if(!db)return reject(Error('浏览器未提供图片保存空间'));const tx=db.transaction('assets','readwrite');if(v)tx.objectStore('assets').put(v,k);else tx.objectStore('assets').delete(k);const timer=setTimeout(()=>{try{tx.abort();}catch{}reject(Error('浏览器保存超时'));},10000);tx.oncomplete=()=>{clearTimeout(timer);resolve();};tx.onerror=tx.onabort=()=>{clearTimeout(timer);reject(tx.error||Error('浏览器保存被中断'));};});}
  function captureEditor(){
   const copy=a=>a?{...a,crop:{...a.crop},raw:{...a.raw}}:null;
   return {settings:structuredClone(s),source:copy(source),logo:copy(logo),title:copy(title),generated:copy(generated)};
@@ -101,7 +102,7 @@ async function init(){
  function updateVisualPlacement(){const visual=activeVisual();s.sourcePlacement=null;if(visual){const r=manualSourceRect(s,visual);s.sourcePlacement={x:r.x/s.w,y:r.y/s.h,w:r.w/s.w,h:r.h/s.h};}}
  function invalidate(){clearTimeout(autoTimer);$('downloadResult').hidden=true;blendedSource=null;currentPlan=null;finalReview=null;s.hideBrandLayers=false;s.aiHiddenLayers=[];applyCrop();updateVisualPlacement();setPhase(generated?'edited':'idle');$('resultBadge').textContent=generated?'AI 背景 · 可继续编辑':'素材预览 · 待 AI 分析';$('canvasCaption').textContent=generated?'已生成背景完整保留，可继续拖动和缩放；新露出的空白可再次补景。':'AI 将保留当前主视觉大小和位置，识别并补齐背景。';$('exportNote').textContent=generated?'下载会使用当前背景位置与大小；如有新空白，可再次点击 AI 补齐背景。':'当前尚未经过 AI 分析，仅可导出素材预览。';if(generated)decision('AI 背景可继续编辑','拖动、缩放不会恢复成原图。调整后可直接下载，或继续补齐新露出的空白。');}
  async function clearGenerated(){generated=null;await dbPut('generated',null).catch(()=>{});}
- async function storeGenerated(){try{let image=generated.img;if(!image.toBlob){const c=document.createElement('canvas');c.width=image.naturalWidth||image.width;c.height=image.naturalHeight||image.height;c.getContext('2d').drawImage(image,0,0);image=c;}await dbPut('generated',{blob:await toBlob(image),w:generated.w,h:generated.h,sourceId:source.id});}catch{toast('背景已生成，但未能保存到浏览器；刷新前请先下载 PNG。');}}
+ async function storeGenerated(){try{let image=generated.img;if(!image.toBlob){const c=document.createElement('canvas');c.width=image.naturalWidth||image.width;c.height=image.naturalHeight||image.height;c.getContext('2d').drawImage(image,0,0);image=c;}if(busy)$('loadingTitle').textContent='背景已生成，正在准备保存…';const blob=await toBlob(image);if(busy)$('loadingTitle').textContent='正在保存背景到当前浏览器…';await dbPut('generated',{blob,w:generated.w,h:generated.h,sourceId:source.id});return true;}catch{toast('背景已生成，但未能保存到浏览器；刷新前请先下载 PNG。');return false;}}
  async function restoreGenerated(){if(!source)return;const saved=await dbGet('generated');if(!saved?.blob||saved.sourceId!==source.id||!validateSize(saved.w,saved.h))return;const url=URL.createObjectURL(saved.blob);try{const a=await loadAsset(url,'AI 背景');generated=generatedAsset(a.img,saved.w,saved.h);invalidate();syncFields();update();feedback('已恢复 AI 背景和编辑位置，可继续拖动、缩放或补齐空白。');}finally{URL.revokeObjectURL(url);}}
  function markManual(){$('downloadResult').hidden=true;finalReview=null;decision('品牌图层已更新','保留你设置的大小、位置和遮挡关系，可直接导出。',currentPlan);$('resultBadge').textContent='图层已更新';$('canvasCaption').textContent='已保留当前主视觉构图，标题和 LOGO 可自由拖动。';$('exportNote').textContent='手动修改后的画面需再次目检；导出不含辅助线。';}
  function outputFilename(){const name=filename(s);return generated||finalReview?name:name.replace(/\.png$/,'-预览.png');}
@@ -219,7 +220,7 @@ async function init(){
   el.onkeydown=e=>{const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!delta)return;e.preventDefault();const r=objectRect(),k=e.shiftKey?10:1;if(r)moveObject(s.selectedLayer,resizeFromCorner(r,el.dataset.corner,delta[0]*k,delta[1]*k));};
  }
  $('copyName').onclick=async()=>{try{await navigator.clipboard.writeText(outputFilename());toast('文件名已复制');}catch{toast('复制未获浏览器授权，可选中文件名手动复制。');}};
- const toBlob=c=>new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(Error('图片导出失败，请减小尺寸')),'image/png'));
+ const toBlob=encodePng;
  async function exportPNG(direct=true){
   if(!(source||logo||title)||busy||uploading||exporting||$('sizeError').textContent)return;
   clearTimeout(autoTimer);exporting=true;setMode('extended');const name=outputFilename(),width=s.w,height=s.h,c=document.createElement('canvas');
@@ -281,8 +282,8 @@ async function init(){
    // Composite the unchanged visible source above model pixels. Brand layers are never baked in.
    const out=document.createElement('canvas'),k=Math.min(1,Math.sqrt(8000000/(s.w*s.h)),4096/Math.max(s.w,s.h));out.width=Math.max(1,Math.round(s.w*k));out.height=Math.max(1,Math.round(s.h*k));
    const oc=out.getContext('2d');oc.drawImage(result.canvas,0,0,out.width,out.height);drawAsset(oc,visual,{x:r.x/s.w*out.width,y:r.y/s.h*out.height,w:r.w/s.w*out.width,h:r.h/s.h*out.height});
-   remember('本机 AI 补景');generated=generatedAsset(out,s.w,s.h);s.sourceZoom=100;s.sourceX=s.sourceY=50;currentPlan=finalReview=null;blendedSource=null;updateVisualPlacement();syncEditor();save();await storeGenerated();
-   setPhase('done');decision('本机补景完成','已合成原主视觉与独立品牌图层。可继续移动背景、缩放，再补齐新空白；请自行检查接缝与细节。');$('resultBadge').textContent='本机补景完成';$('canvasCaption').textContent='背景已保存，可继续拖动、缩放；主标题与 LOGO 仍是独立图层。';$('exportNote').textContent='补景和导出均在本机完成，导出保持所选像素尺寸；请自行检查画面细节。';feedback(modelLabels[result.model]+' · '+result.device+'已完成补景。效果不满意可点击“撤回上一步”。','success');
+   remember('本机 AI 补景');generated=generatedAsset(out,s.w,s.h);s.sourceZoom=100;s.sourceX=s.sourceY=50;currentPlan=finalReview=null;blendedSource=null;updateVisualPlacement();syncEditor();save();const persisted=await storeGenerated();
+   setPhase('done');decision('本机补景完成','已合成原主视觉与独立品牌图层。可继续移动背景、缩放，再补齐新空白；请自行检查接缝与细节。');$('resultBadge').textContent='本机补景完成';$('canvasCaption').textContent=persisted?'背景已保存，可继续拖动、缩放；主标题与 LOGO 仍是独立图层。':'背景已生成，可继续编辑；浏览器保存失败，刷新前请先下载。';$('exportNote').textContent='补景和导出均在本机完成，导出保持所选像素尺寸；请自行检查画面细节。';feedback(persisted?modelLabels[result.model]+' · '+result.device+'已完成补景。效果不满意可点击“撤回上一步”。':'背景已生成并可继续编辑，但浏览器保存失败；刷新前请先下载 PNG。',persisted?'success':'error');
   }catch(e){setPhase('error');decision(e.name==='AbortError'?'本机补景已停止':'本机补景未完成',e.message);feedback(e.message,e.name==='AbortError'?'':'error');$('resultBadge').textContent=generated?'已有背景已保留':'当前画布已保留';}
   finally{clearInterval(timer);localAbort=null;$('studioRoot').removeAttribute('aria-busy');setBusy(false);}
  }
