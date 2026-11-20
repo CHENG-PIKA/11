@@ -1,0 +1,17 @@
+{
+  "name": "ort-130-asyncify",
+  "bytes": 26781914,
+  "sha256": "39f9f0894d478800487ed9f7dbe92618498db320cf55c8e3d89adff8dce658da",
+  "parts": [
+    {
+      "path": "./ort-130-asyncify-0.bin",
+      "bytes": 16777216,
+      "sha256": "9f3196f1ef3506d7cabb9558f2fac779571b225007b744e766d8e63228750d3a"
+    },
+    {
+      "path": "./ort-130-asyncify-1.bin",
+      "bytes": 10004698,
+      "sha256": "8fdca824417391c1f641b1b9cd1bcd407191ad75fe03d9bfa7139fdf358faa13"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "lama-r4-v1",
+  "bytes": 36931151,
+  "sha256": "4e3b78a253eb4abf21896811c928ffa91214b916e5d6ced24cecdd7999b4aaa1",
+  "parts": [
+    {
+      "path": "./lama-r4-v1-0.bin",
+      "bytes": 16777216,
+      "sha256": "c94ae7f31fe858089e2a1b1c74c1b4627dac5ac48c8a0d3326b21410e5fd07ed"
+    },
+    {
+      "path": "./lama-r4-v1-1.bin",
+      "bytes": 16777216,
+      "sha256": "107647a03a8723ea3449e5e2768fdbc99eda96d229c66af3071c994b68fcbb1a"
+    },
+    {
+      "path": "./lama-r4-v1-2.bin",
+      "bytes": 3376719,
+      "sha256": "d0b22daaf51ca8c510ed5ce371abc8bea1ab409d478cd9d32b457447c107af17"
+    }
+  ],
+  "label": "LaMa 增强",
+  "source": "https://huggingface.co/othytenk/lama-int4-int8/tree/b52ebb642126086fe3da1524a3b1d7629ae4c6a9",
+  "license": "Apache-2.0"
+}

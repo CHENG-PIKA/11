@@ -1,0 +1,18 @@
+{
+  "name": "MI-GAN Places2",
+  "version": 1,
+  "bytes": 29546882,
+  "sha256": "593eba0b7e04730f1b61c0a3cbca68d97d8d6a7ff5c6a44a7b9d7fcd880fc5ae",
+  "parts": [
+    {
+      "path": "./migan-v1-0.bin",
+      "bytes": 16777216,
+      "sha256": "bfe3257cadcfeb7d56ca179a7cabbfec844c0fabbfabdc6f7feca827ac75b46d"
+    },
+    {
+      "path": "./migan-v1-1.bin",
+      "bytes": 12769666,
+      "sha256": "f69834052f0805bad8b59abbc1f9afaf463219612fc4cd6c3f65adebbfa11a0c"
+    }
+  ]
+}

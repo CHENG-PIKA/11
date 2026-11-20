@@ -1,0 +1,26 @@
+{
+  "repo": "CardAnvilModels/Moebius-pretrained-ONNX",
+  "revision": "8a9bc45a6fe2c59ee5aa967a700a726b36cc2df7",
+  "totalBytes": 1241534741,
+  "license": "apache-2.0",
+  "files": [
+    {
+      "name": "unet.onnx",
+      "bytes": 906698977,
+      "sha256": "c2ea6bed5156872091294ae238d127a4e2987dfea288321341cca59061cb1549",
+      "url": "https://huggingface.co/CardAnvilModels/Moebius-pretrained-ONNX/resolve/8a9bc45a6fe2c59ee5aa967a700a726b36cc2df7/unet.onnx"
+    },
+    {
+      "name": "vae_decoder.onnx",
+      "bytes": 198078671,
+      "sha256": "d90ef0b7f6c8c8b7234459c8b449d70be0033bf1576c842e8b9991baf3934280",
+      "url": "https://huggingface.co/CardAnvilModels/Moebius-pretrained-ONNX/resolve/8a9bc45a6fe2c59ee5aa967a700a726b36cc2df7/vae_decoder.onnx"
+    },
+    {
+      "name": "vae_encoder.onnx",
+      "bytes": 136757093,
+      "sha256": "b8b81d41e757222a0707665ba9d826703987855e5bed056036b90b988968042f",
+      "url": "https://huggingface.co/CardAnvilModels/Moebius-pretrained-ONNX/resolve/8a9bc45a6fe2c59ee5aa967a700a726b36cc2df7/vae_encoder.onnx"
+    }
+  ]
+}
